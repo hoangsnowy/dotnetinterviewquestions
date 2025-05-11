@@ -19,13 +19,16 @@ A comprehensive collection of .NET interview questions and answers, focusing on 
   - Encapsulation
   - SOLID Principles
 
-- [C# Fundamentals](csharp/fundamentals.en.md)
+- [Core C# Concepts](csharp/core.en.md)
   - Generics & Constraints
-  - Delegates & Events
-  - LINQ & Lambda Expressions
+  - Delegates, Events & Lambdas
+  - LINQ (joins, group, Expression<Func<,>>)
   - Tuples & Deconstruction
-  - Indexers & Extension Methods
+  - Extension Methods & Indexers
   - Nullable Reference Types
+  - Custom Exceptions & IDisposable
+  - Async/Await Nuances
+  - Reflection & Attributes
 
 - [Advanced C# Concepts](csharp/advanced.en.md)
   - Async/Await & Task Parallel Library

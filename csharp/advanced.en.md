@@ -14,10 +14,10 @@ This guide covers advanced C# concepts with practical examples and interview que
 
 ## 1. Async/Await & Task Parallel Library
 
-### Question / Câu hỏi
+### Question
 How do you handle asynchronous operations in C# using async/await and TPL?
 
-### Suggested Answer / Câu trả lời gợi ý
+### Suggested Answer
 Async/await and TPL provide a way to write asynchronous code that's easy to read and maintain. They help prevent blocking operations and improve application responsiveness.
 
 ```csharp
@@ -59,7 +59,7 @@ public class PaymentProcessor
 }
 ```
 
-### Follow-up Q&A / Câu hỏi phụ
+### Follow-up Q&A
 
 1. **Q: How do you prevent deadlocks in async code?**
    - **A**: Use ConfigureAwait(false) in libraries and avoid blocking on async code.
@@ -69,10 +69,10 @@ public class PaymentProcessor
 
 ## 2. Memory Management & Span<T> / Memory<T>
 
-### Question / Câu hỏi
+### Question
 How do you optimize memory usage with Span<T> and Memory<T> in C#?
 
-### Suggested Answer / Câu trả lời gợi ý
+### Suggested Answer
 Span<T> and Memory<T> provide efficient ways to work with memory without allocations, improving performance for high-throughput scenarios.
 
 ```csharp
@@ -104,7 +104,7 @@ public class FileProcessor
 }
 ```
 
-### Follow-up Q&A / Câu hỏi phụ
+### Follow-up Q&A
 
 1. **Q: What's the difference between Span<T> and Memory<T>?**
    - **A**: Span<T> is stack-only and can't be stored in fields, while Memory<T> can be stored and used across async boundaries.
@@ -114,10 +114,10 @@ public class FileProcessor
 
 ## 3. Pattern Matching
 
-### Question / Câu hỏi
+### Question
 How do you use pattern matching in C# for complex type checking and data extraction?
 
-### Suggested Answer / Câu trả lời gợi ý
+### Suggested Answer
 Pattern matching provides a concise way to check types and extract data using switch expressions and property patterns.
 
 ```csharp
@@ -141,7 +141,7 @@ public class OrderProcessor
 }
 ```
 
-### Follow-up Q&A / Câu hỏi phụ
+### Follow-up Q&A
 
 1. **Q: What's the difference between switch statement and switch expression?**
    - **A**: Switch expression is more concise and can return a value, while switch statement is more traditional and can't return values.
@@ -151,10 +151,10 @@ public class OrderProcessor
 
 ## 4. Expression Trees & Source Generators
 
-### Question / Câu hỏi
+### Question
 How do you use expression trees and source generators in C#?
 
-### Suggested Answer / Câu trả lời gợi ý
+### Suggested Answer
 Expression trees allow you to represent code as data structures, and source generators let you generate code at compile time.
 
 ```csharp
@@ -203,7 +203,7 @@ public class CustomGenerator : ISourceGenerator
 }
 ```
 
-### Follow-up Q&A / Câu hỏi phụ
+### Follow-up Q&A
 
 1. **Q: When should you use expression trees?**
    - **A**: Use expression trees when you need to analyze or transform code at runtime, such as in LINQ providers.
@@ -213,10 +213,10 @@ public class CustomGenerator : ISourceGenerator
 
 ## 5. Threading & Synchronization
 
-### Question / Câu hỏi
+### Question
 How do you handle concurrent operations and synchronization in C#?
 
-### Suggested Answer / Câu trả lời gợi ý
+### Suggested Answer
 C# provides various synchronization primitives and patterns for handling concurrent operations safely.
 
 ```csharp
@@ -249,28 +249,28 @@ public class OrderProcessor
         {
             lock (_lock)
             {
-                // Update inventory
+                // Update inventory safely
             }
         });
     }
 }
 ```
 
-### Follow-up Q&A / Câu hỏi phụ
+### Follow-up Q&A
 
-1. **Q: How do you prevent deadlocks in multi-threaded code?**
-   - **A**: Use proper locking order and timeouts to prevent deadlocks.
+1. **Q: What's the difference between lock and SemaphoreSlim?**
+   - **A**: Lock is for mutual exclusion, while SemaphoreSlim allows multiple threads to access a resource up to a limit.
 
-2. **Q: When should you use Parallel.ForEach vs async/await?**
-   - **A**: Use Parallel.ForEach for CPU-bound operations and async/await for I/O-bound operations.
+2. **Q: When should you use Parallel.ForEach?**
+   - **A**: Use Parallel.ForEach for CPU-bound operations that can be parallelized.
 
 ## 6. Unsafe Code & Pointers
 
-### Question / Câu hỏi
+### Question
 How do you use unsafe code and pointers in C#?
 
-### Suggested Answer / Câu trả lời gợi ý
-Unsafe code and pointers allow direct memory manipulation, which can be useful for performance-critical scenarios.
+### Suggested Answer
+Unsafe code allows direct memory manipulation using pointers, which can be useful for performance-critical scenarios.
 
 ```csharp
 public unsafe class BufferProcessor
@@ -279,6 +279,7 @@ public unsafe class BufferProcessor
     {
         fixed (byte* ptr = buffer)
         {
+            // Process buffer using pointers
             for (int i = 0; i < buffer.Length; i++)
             {
                 *(ptr + i) = (byte)(*(ptr + i) ^ 0xFF);
@@ -288,112 +289,97 @@ public unsafe class BufferProcessor
 }
 ```
 
-### Follow-up Q&A / Câu hỏi phụ
+### Follow-up Q&A
 
 1. **Q: When should you use unsafe code?**
-   - **A**: Use unsafe code only when necessary for performance or interop with native code.
+   - **A**: Use unsafe code only when necessary for performance optimization and when you understand the risks.
 
-2. **Q: How do you handle pointer arithmetic safely?**
-   - **A**: Use proper bounds checking and fixed statements to ensure safe pointer arithmetic.
+2. **Q: What are the risks of using unsafe code?**
+   - **A**: Unsafe code can lead to memory corruption, security vulnerabilities, and platform-specific issues.
 
 ## 7. Advanced Reflection & Custom Attributes
 
-### Question / Câu hỏi
+### Question
 How do you use reflection and custom attributes in C#?
 
-### Suggested Answer / Câu trả lời gợi ý
-Reflection allows you to inspect and manipulate types at runtime, and custom attributes provide metadata for types and members.
+### Suggested Answer
+Reflection allows you to inspect and modify code at runtime, while custom attributes provide metadata for your code.
 
 ```csharp
-[AttributeUsage(AttributeTargets.Class)]
-public class TableAttribute : Attribute
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public class LogAttribute : Attribute
 {
-    public string Name { get; }
+    public string Message { get; }
 
-    public TableAttribute(string name)
+    public LogAttribute(string message)
     {
-        Name = name;
+        Message = message;
     }
 }
 
-[Table("Products")]
-public class Product
+public class ReflectionExample
 {
-    public int Id { get; set; }
-    public string Name { get; set; }
-}
-
-public class EntityMapper
-{
-    public string GetTableName(Type type)
+    public void ProcessType(Type type)
     {
-        var attribute = type.GetCustomAttribute<TableAttribute>();
-        return attribute?.Name ?? type.Name;
-    }
-
-    public T CreateInstance<T>() where T : class
-    {
-        return Activator.CreateInstance<T>();
+        var attributes = type.GetCustomAttributes<LogAttribute>();
+        foreach (var attr in attributes)
+        {
+            Console.WriteLine(attr.Message);
+        }
     }
 }
 ```
 
-### Follow-up Q&A / Câu hỏi phụ
+### Follow-up Q&A
 
-1. **Q: How do you create and use custom attributes?**
-   - **A**: Create an attribute class and use reflection to read it.
+1. **Q: When should you use reflection?**
+   - **A**: Use reflection when you need to inspect or modify code at runtime, such as in serialization or dependency injection.
 
-2. **Q: When should you use reflection?**
-   - **A**: Use reflection when you need to work with types dynamically or access metadata at runtime.
+2. **Q: What are the performance implications of reflection?**
+   - **A**: Reflection can be slow, so use it judiciously and consider caching reflection results.
 
 ## 8. Preprocessor Directives
 
-### Question / Câu hỏi
+### Question
 How do you use preprocessor directives in C#?
 
-### Suggested Answer / Câu trả lời gợi ý
-Preprocessor directives allow you to control compilation and organize code.
+### Suggested Answer
+Preprocessor directives allow you to control compilation and include/exclude code based on conditions.
 
 ```csharp
-public class Configuration
-{
-    public string GetConnectionString()
-    {
-        #if DEBUG
-            return "DebugConnectionString";
-        #elif RELEASE
-            return "ReleaseConnectionString";
-        #else
-            return "DefaultConnectionString";
-        #endif
-    }
+#define DEBUG
+#define TRACE
 
-    #region Logging
-    public void Log(string message)
+public class PreprocessorExample
+{
+    public void Process()
     {
-        #if DEBUG
-            Console.WriteLine($"Debug: {message}");
-        #endif
+#if DEBUG
+        Console.WriteLine("Debug mode");
+#elif TRACE
+        Console.WriteLine("Trace mode");
+#else
+        Console.WriteLine("Release mode");
+#endif
     }
-    #endregion
 }
 ```
 
-### Follow-up Q&A / Câu hỏi phụ
+### Follow-up Q&A
 
-1. **Q: When should you use preprocessor directives?**
-   - **A**: Use them for conditional compilation and code organization.
+1. **Q: What's the difference between #if and #ifdef?**
+   - **A**: #if evaluates a condition, while #ifdef checks if a symbol is defined.
 
-2. **Q: How do you handle multiple build configurations?**
-   - **A**: Use preprocessor directives and build configurations to handle different environments.
+2. **Q: When should you use preprocessor directives?**
+   - **A**: Use preprocessor directives for conditional compilation and platform-specific code.
 
-### Additional Resources
-- [C# Async/Await](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/)
-- [C# Memory Management](https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/)
-- [C# Pattern Matching](https://docs.microsoft.com/en-us/dotnet/csharp/pattern-matching)
-- [C# Expression Trees](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/expression-trees/)
-- [C# Source Generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview)
-- [C# Threading](https://docs.microsoft.com/en-us/dotnet/standard/threading/)
-- [C# Unsafe Code](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/unsafe-code)
-- [C# Reflection](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/reflection)
-- [C# Preprocessor Directives](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives)
+## Additional Resources
+
+- [Microsoft Docs: Async/Await](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/)
+- [Microsoft Docs: Span<T>](https://docs.microsoft.com/en-us/dotnet/api/system.span-1)
+- [Microsoft Docs: Pattern Matching](https://docs.microsoft.com/en-us/dotnet/csharp/pattern-matching)
+- [Microsoft Docs: Expression Trees](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/expression-trees/)
+- [Microsoft Docs: Threading](https://docs.microsoft.com/en-us/dotnet/standard/threading/)
+- [Microsoft Docs: Unsafe Code](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/unsafe-code)
+- [Microsoft Docs: Reflection](https://docs.microsoft.com/en-us/dotnet/framework/reflection-and-codedom/reflection)
+- [Microsoft Docs: Preprocessor Directives](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives)
