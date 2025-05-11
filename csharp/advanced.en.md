@@ -1,408 +1,72 @@
-# Advanced C# Concepts - Interview Questions
+# Advanced C# Concepts
 
 This guide covers advanced C# concepts with practical examples and interview questions.
 
 ## Table of Contents
-1. [Delegates and Events](#1-delegates-and-events)
-2. [LINQ and Lambda Expressions](#2-linq-and-lambda-expressions)
-3. [Async/Await and Tasks](#3-asyncawait-and-tasks)
-4. [Reflection and Attributes](#4-reflection-and-attributes)
-5. [Generics and Constraints](#5-generics-and-constraints)
+1. [Async/Await & Task Parallel Library](#1-asyncawait--task-parallel-library)
+2. [Memory Management & Span<T> / Memory<T>](#2-memory-management--spant--memoryt)
+3. [Pattern Matching](#3-pattern-matching)
+4. [Expression Trees & Source Generators](#4-expression-trees--source-generators)
+5. [Threading & Synchronization](#5-threading--synchronization)
+6. [Unsafe Code & Pointers](#6-unsafe-code--pointers)
+7. [Advanced Reflection & Custom Attributes](#7-advanced-reflection--custom-attributes)
+8. [Preprocessor Directives](#8-preprocessor-directives)
 
-## 1. Delegates and Events
+## 1. Async/Await & Task Parallel Library
 
-### Core Concept
-Delegates are type-safe function pointers that can reference methods, while events are a way to provide notifications to subscribers.
+### Core Concepts
+- async/await keywords
+- Task Parallel Library (TPL)
+- Deadlock prevention
+- ConfigureAwait(false)
+- Task.Run vs async/await
+- Task.WhenAll/WhenAny
+- CancellationToken
 
 ### Real-world Example
-In an ecommerce system:
-- Order status change notifications
-- Payment processing callbacks
-- Inventory update events
-- Price change notifications
-
-### Code Example
+Payment processing system with multiple async operations:
 ```csharp
-public class OrderProcessor
+public class PaymentProcessor
 {
-    // Delegate definition
-    public delegate void OrderStatusChangedHandler(Order order, OrderStatus newStatus);
-    
-    // Event using the delegate
-    public event OrderStatusChangedHandler OrderStatusChanged;
-    
-    // Event using built-in EventHandler
-    public event EventHandler<OrderEventArgs> OrderProcessed;
+    private readonly IPaymentGateway _gateway;
+    private readonly ILogger<PaymentProcessor> _logger;
 
-    private readonly ILogger<OrderProcessor> _logger;
-
-    public OrderProcessor(ILogger<OrderProcessor> logger)
+    public PaymentProcessor(IPaymentGateway gateway, ILogger<PaymentProcessor> logger)
     {
+        _gateway = gateway;
         _logger = logger;
     }
 
-    public async Task ProcessOrder(Order order)
+    public async Task<PaymentResult> ProcessPaymentAsync(PaymentRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            // Process order...
-            await UpdateOrderStatus(order, OrderStatus.Processing);
-            
-            // Notify subscribers
-            OnOrderStatusChanged(order, OrderStatus.Processing);
-            OnOrderProcessed(new OrderEventArgs(order));
+            // Validate payment
+            await ValidatePaymentAsync(request, cancellationToken);
+
+            // Process payment in parallel
+            var tasks = new[]
+            {
+                _gateway.ProcessPaymentAsync(request, cancellationToken),
+                _gateway.ValidateFraudAsync(request, cancellationToken),
+                _gateway.CheckBalanceAsync(request, cancellationToken)
+            };
+
+            await Task.WhenAll(tasks);
+
+            // Handle results
+            return new PaymentResult { Success = true };
         }
-        catch (Exception ex)
+        catch (OperationCanceledException)
         {
-            _logger.LogError(ex, "Error processing order {OrderId}", order.Id);
+            _logger.LogWarning("Payment processing was cancelled");
             throw;
         }
-    }
-
-    protected virtual void OnOrderStatusChanged(Order order, OrderStatus newStatus)
-    {
-        OrderStatusChanged?.Invoke(order, newStatus);
-    }
-
-    protected virtual void OnOrderProcessed(OrderEventArgs e)
-    {
-        OrderProcessed?.Invoke(this, e);
-    }
-}
-
-// Usage
-public class OrderNotificationService
-{
-    private readonly ILogger<OrderNotificationService> _logger;
-
-    public OrderNotificationService(ILogger<OrderNotificationService> logger)
-    {
-        _logger = logger;
-    }
-
-    public void SubscribeToOrderEvents(OrderProcessor processor)
-    {
-        processor.OrderStatusChanged += HandleOrderStatusChanged;
-        processor.OrderProcessed += HandleOrderProcessed;
-    }
-
-    private void HandleOrderStatusChanged(Order order, OrderStatus newStatus)
-    {
-        _logger.LogInformation("Order {OrderId} status changed to {Status}", 
-            order.Id, newStatus);
-    }
-
-    private void HandleOrderProcessed(object sender, OrderEventArgs e)
-    {
-        _logger.LogInformation("Order {OrderId} processed", e.Order.Id);
-    }
-}
-```
-
-### Best Practices
-1. **Delegate Design**
-   - Use built-in delegates when possible
-   - Follow naming conventions
-   - Document delegate parameters
-   - Handle null cases
-
-2. **Event Handling**
-   - Use EventHandler<T> for standard events
-   - Implement proper thread safety
-   - Handle exceptions in handlers
-   - Unsubscribe when done
-
-3. **Thread Safety**
-   - Use thread-safe event invocation
-   - Handle concurrent subscriptions
-   - Protect event handlers
-   - Use proper locking
-
-4. **Error Handling**
-   - Handle exceptions in handlers
-   - Log errors properly
-   - Provide error context
-   - Maintain system stability
-
-### Anti-patterns
-1. **Delegate Issues**
-   - Memory leaks
-   - Thread safety issues
-   - Poor error handling
-   - Not unsubscribing
-
-2. **Event Problems**
-   - Too many events
-   - Complex event chains
-   - Poor error handling
-   - Not thread-safe
-
-3. **Thread Safety**
-   - Race conditions
-   - Deadlocks
-   - Not thread-safe
-   - Poor locking
-
-4. **Error Handling**
-   - Swallowing exceptions
-   - Not logging
-   - Poor error context
-   - System instability
-
-### Follow-up Questions
-
-1. **Q: What's the difference between delegates and events?**
-   - **Answer**: Delegates are function pointers that can be invoked directly, while events are a way to provide notifications to subscribers and can only be invoked by the declaring class.
-   - **Example**:
-     ```csharp
-     // Delegate
-     public delegate void ProcessOrderDelegate(Order order);
-     ProcessOrderDelegate processor = ProcessOrder;
-     processor(order); // Can be invoked directly
-
-     // Event
-     public event EventHandler<OrderEventArgs> OrderProcessed;
-     OrderProcessed?.Invoke(this, new OrderEventArgs(order)); // Can only be invoked by declaring class
-     ```
-   - **Best Practice**: Use events for notifications and delegates for callbacks.
-
-2. **Q: How do you handle memory leaks with events?**
-   - **Answer**: Always unsubscribe from events when the subscriber is no longer needed, and use weak references for long-lived subscriptions.
-   - **Example**:
-     ```csharp
-     public class OrderSubscriber : IDisposable
-     {
-         private readonly OrderProcessor _processor;
-
-         public OrderSubscriber(OrderProcessor processor)
-         {
-             _processor = processor;
-             _processor.OrderProcessed += HandleOrderProcessed;
-         }
-
-         public void Dispose()
-         {
-             _processor.OrderProcessed -= HandleOrderProcessed;
-         }
-     }
-     ```
-   - **Best Practice**: Implement IDisposable and unsubscribe from events.
-
-## 2. LINQ and Lambda Expressions
-
-### Core Concept
-LINQ (Language Integrated Query) provides a way to query data using a SQL-like syntax, while lambda expressions are anonymous functions that can be used to create delegates or expression trees.
-
-### Real-world Example
-In an ecommerce system:
-- Product filtering and sorting
-- Order aggregation and grouping
-- Customer data analysis
-- Inventory management
-
-### Code Example
-```csharp
-public class ProductService
-{
-    private readonly List<Product> _products;
-    private readonly ILogger<ProductService> _logger;
-
-    public ProductService(ILogger<ProductService> logger)
-    {
-        _products = new List<Product>();
-        _logger = logger;
-    }
-
-    public IEnumerable<Product> GetProductsByCategory(string category)
-    {
-        return _products
-            .Where(p => p.Category == category)
-            .OrderBy(p => p.Price);
-    }
-
-    public IEnumerable<Product> GetProductsInPriceRange(decimal minPrice, decimal maxPrice)
-    {
-        return _products
-            .Where(p => p.Price >= minPrice && p.Price <= maxPrice)
-            .OrderByDescending(p => p.Price);
-    }
-
-    public IEnumerable<IGrouping<string, Product>> GetProductsByCategory()
-    {
-        return _products
-            .GroupBy(p => p.Category)
-            .OrderBy(g => g.Key);
-    }
-
-    public decimal GetAveragePriceByCategory(string category)
-    {
-        return _products
-            .Where(p => p.Category == category)
-            .Average(p => p.Price);
-    }
-
-    public IEnumerable<Product> GetTopSellingProducts(int count)
-    {
-        return _products
-            .OrderByDescending(p => p.SalesCount)
-            .Take(count);
-    }
-}
-```
-
-### Best Practices
-1. **LINQ Usage**
-   - Use appropriate methods
-   - Consider performance
-   - Handle nulls
-   - Use proper filtering
-
-2. **Lambda Expressions**
-   - Keep them simple
-   - Use meaningful names
-   - Handle exceptions
-   - Consider readability
-
-3. **Performance**
-   - Use deferred execution
-   - Avoid multiple iterations
-   - Use appropriate methods
-   - Consider memory usage
-
-4. **Error Handling**
-   - Handle nulls
-   - Validate inputs
-   - Handle exceptions
-   - Log errors
-
-### Anti-patterns
-1. **LINQ Issues**
-   - N+1 queries
-   - Multiple iterations
-   - Poor performance
-   - Not handling nulls
-
-2. **Lambda Problems**
-   - Complex expressions
-   - Poor readability
-   - Not handling errors
-   - Memory leaks
-
-3. **Performance**
-   - Eager loading
-   - Multiple iterations
-   - Poor filtering
-   - Memory issues
-
-4. **Error Handling**
-   - Not handling nulls
-   - Not validating
-   - Not logging
-   - Poor error messages
-
-### Follow-up Questions
-
-1. **Q: What's the difference between IEnumerable and IQueryable?**
-   - **Answer**: IEnumerable is used for in-memory collections, while IQueryable is used for database queries and supports deferred execution.
-   - **Example**:
-     ```csharp
-     // IEnumerable - in-memory
-     var products = _products
-         .Where(p => p.Price > 100)
-         .ToList(); // Executes immediately
-
-     // IQueryable - database
-     var products = _dbContext.Products
-         .Where(p => p.Price > 100)
-         .ToList(); // Executes when enumerated
-     ```
-   - **Best Practice**: Use IQueryable for database queries and IEnumerable for in-memory collections.
-
-2. **Q: How do you optimize LINQ performance?**
-   - **Answer**: Use appropriate methods, avoid multiple iterations, and consider using compiled queries for frequently used queries.
-   - **Example**:
-     ```csharp
-     // Compiled query
-     private static readonly Func<DbContext, string, IEnumerable<Product>> GetProductsByCategory =
-         EF.CompileQuery((DbContext context, string category) =>
-             context.Products
-                 .Where(p => p.Category == category)
-                 .OrderBy(p => p.Price));
-
-     // Usage
-     var products = GetProductsByCategory(_dbContext, "Electronics");
-     ```
-   - **Best Practice**: Use compiled queries for frequently used queries.
-
-## 3. Async/Await and Tasks
-
-### Core Concept
-Async/await is a way to write asynchronous code that looks synchronous, while Tasks represent asynchronous operations.
-
-### Real-world Example
-In an ecommerce system:
-- API calls
-- Database operations
-- File I/O
-- External service integration
-
-### Code Example
-```csharp
-public class OrderService
-{
-    private readonly IOrderRepository _orderRepository;
-    private readonly IPaymentProcessor _paymentProcessor;
-    private readonly IInventoryService _inventoryService;
-    private readonly ILogger<OrderService> _logger;
-
-    public OrderService(
-        IOrderRepository orderRepository,
-        IPaymentProcessor paymentProcessor,
-        IInventoryService inventoryService,
-        ILogger<OrderService> logger)
-    {
-        _orderRepository = orderRepository;
-        _paymentProcessor = paymentProcessor;
-        _inventoryService = inventoryService;
-        _logger = logger;
-    }
-
-    public async Task<OrderResult> ProcessOrderAsync(Order order)
-    {
-        try
-        {
-            // Validate order
-            if (order == null)
-                throw new ArgumentNullException(nameof(order));
-
-            // Process payment
-            var paymentResult = await _paymentProcessor.ProcessPaymentAsync(order.Total);
-            if (!paymentResult.Success)
-                return new OrderResult { Success = false, Error = paymentResult.Error };
-
-            // Update inventory
-            await _inventoryService.UpdateStockAsync(order.Items);
-
-            // Save order
-            await _orderRepository.SaveOrderAsync(order);
-
-            return new OrderResult { Success = true, OrderId = order.Id };
-        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing order {OrderId}", order.Id);
-            return new OrderResult { Success = false, Error = ex.Message };
+            _logger.LogError(ex, "Error processing payment");
+            throw;
         }
-    }
-
-    public async Task<IEnumerable<Order>> GetOrdersByCustomerAsync(int customerId)
-    {
-        return await _orderRepository.GetOrdersByCustomerAsync(customerId);
-    }
-
-    public async Task<Order> GetOrderByIdAsync(int orderId)
-    {
-        return await _orderRepository.GetOrderByIdAsync(orderId);
     }
 }
 ```
@@ -410,468 +74,1052 @@ public class OrderService
 ### Best Practices
 1. **Async/Await Usage**
    - Use async/await consistently
-   - Avoid async void
-   - Handle exceptions
-   - Use proper cancellation
+   - Avoid .Result or .Wait()
+   - Use ConfigureAwait(false) in libraries
+   - Handle cancellation properly
 
 2. **Task Management**
-   - Use Task.WhenAll/WhenAny
-   - Handle task exceptions
-   - Use proper cancellation
-   - Monitor task status
+   - Use Task.WhenAll for parallel operations
+   - Handle task exceptions properly
+   - Use CancellationToken for cancellation
+   - Monitor task completion
 
-3. **Performance**
-   - Avoid blocking calls
-   - Use proper concurrency
-   - Handle resource cleanup
-   - Monitor memory usage
-
-4. **Error Handling**
-   - Handle exceptions
+3. **Error Handling**
+   - Handle async exceptions
    - Use proper logging
-   - Provide error context
-   - Maintain system stability
+   - Implement retry logic
+   - Handle cancellation
+
+4. **Performance**
+   - Avoid blocking calls
+   - Use proper task scheduling
+   - Monitor async performance
+   - Handle resource cleanup
 
 ### Anti-patterns
-1. **Async/Await Issues**
-   - Async void
-   - Blocking calls
+1. **Async Issues**
+   - Blocking on async code
    - Not handling exceptions
-   - Poor cancellation
+   - Not using cancellation
+   - Deadlocks
 
 2. **Task Problems**
    - Not awaiting tasks
-   - Poor exception handling
+   - Not handling exceptions
    - Not using cancellation
-   - Memory leaks
+   - Resource leaks
 
-3. **Performance**
+3. **Error Handling**
+   - Not handling async errors
+   - Not logging properly
+   - No retry logic
+   - Poor error context
+
+4. **Performance**
    - Blocking calls
-   - Poor concurrency
+   - Poor task scheduling
    - Resource leaks
    - Memory issues
 
-4. **Error Handling**
-   - Not handling exceptions
-   - Not logging
-   - Poor error context
-   - System instability
-
 ### Follow-up Questions
 
-1. **Q: What's the difference between Task and ValueTask?**
-   - **Answer**: Task is a reference type that represents an asynchronous operation, while ValueTask is a value type that can avoid heap allocation for completed operations.
+1. **Q: How do you prevent deadlocks in async code?**
+   - **Answer**: Use ConfigureAwait(false) in libraries and avoid blocking on async code.
    - **Example**:
      ```csharp
-     // Task - reference type
-     public async Task<int> GetCountAsync()
+     // Bad: Potential deadlock
+     public string GetData()
      {
-         await Task.Delay(100);
-         return 42;
+         return GetDataAsync().Result;
      }
 
-     // ValueTask - value type
-     public async ValueTask<int> GetCountAsync()
+     // Good: No deadlock
+     public async Task<string> GetDataAsync()
      {
-         if (_cachedCount.HasValue)
-             return _cachedCount.Value;
-
-         await Task.Delay(100);
-         return 42;
+         return await GetDataFromServiceAsync().ConfigureAwait(false);
      }
      ```
-   - **Best Practice**: Use ValueTask for methods that might complete synchronously.
+   - **Best Practice**: Always use async/await consistently and avoid blocking calls.
 
-2. **Q: How do you handle cancellation in async methods?**
-   - **Answer**: Use CancellationToken to support cancellation and handle it properly in async methods.
+2. **Q: How do you handle multiple async operations?**
+   - **Answer**: Use Task.WhenAll for parallel operations and handle exceptions properly.
    - **Example**:
      ```csharp
-     public async Task<OrderResult> ProcessOrderAsync(
-         Order order,
-         CancellationToken cancellationToken = default)
+     public async Task ProcessOrdersAsync(IEnumerable<Order> orders)
      {
-         try
+         var tasks = orders.Select(async order =>
          {
-             cancellationToken.ThrowIfCancellationRequested();
+             await _semaphore.WaitAsync();
+             try
+             {
+                 await ProcessOrderAsync(order);
+             }
+             finally
+             {
+                 _semaphore.Release();
+             }
+         });
 
-             // Process order...
-             await _paymentProcessor.ProcessPaymentAsync(
-                 order.Total,
-                 cancellationToken);
-
-             return new OrderResult { Success = true };
-         }
-         catch (OperationCanceledException)
-         {
-             _logger.LogWarning("Order processing cancelled");
-             return new OrderResult { Success = false, Error = "Operation cancelled" };
-         }
+         await Task.WhenAll(tasks);
      }
      ```
-   - **Best Practice**: Always support cancellation in long-running async operations.
+   - **Best Practice**: Use Task.WhenAll for parallel operations and handle exceptions properly.
 
-## 4. Reflection and Attributes
+## 2. Memory Management & Span<T> / Memory<T>
 
-### Core Concept
-Reflection allows you to inspect and interact with types at runtime, while attributes provide metadata about types and members.
+### Core Concepts
+- Garbage Collection
+- Generations
+- Pinning
+- Span<T>
+- Memory<T>
+- Buffer handling
 
 ### Real-world Example
-In an ecommerce system:
-- Validation attributes
-- API documentation
-- Dependency injection
-- Custom serialization
-
-### Code Example
+Efficient buffer processing in a file system:
 ```csharp
-[AttributeUsage(AttributeTargets.Property)]
-public class RequiredAttribute : Attribute
+public class FileProcessor
 {
-    public string ErrorMessage { get; }
-
-    public RequiredAttribute(string errorMessage = "This field is required")
+    public async Task ProcessFileAsync(string filePath)
     {
-        ErrorMessage = errorMessage;
-    }
-}
+        using var file = File.OpenRead(filePath);
+        var buffer = new byte[8192];
+        var memory = new Memory<byte>(buffer);
 
-public class Product
-{
-    [Required("Product name is required")]
-    public string Name { get; set; }
-
-    [Required("Product price is required")]
-    [Range(0, double.MaxValue, ErrorMessage = "Price must be positive")]
-    public decimal Price { get; set; }
-
-    [Required("Product category is required")]
-    public string Category { get; set; }
-}
-
-public class ValidationService
-{
-    public IEnumerable<ValidationError> Validate(object obj)
-    {
-        var errors = new List<ValidationError>();
-        var type = obj.GetType();
-
-        foreach (var property in type.GetProperties())
+        while (true)
         {
-            var requiredAttr = property.GetCustomAttribute<RequiredAttribute>();
-            if (requiredAttr != null)
-            {
-                var value = property.GetValue(obj);
-                if (value == null || string.IsNullOrEmpty(value.ToString()))
-                {
-                    errors.Add(new ValidationError
-                    {
-                        PropertyName = property.Name,
-                        ErrorMessage = requiredAttr.ErrorMessage
-                    });
-                }
-            }
-        }
+            var bytesRead = await file.ReadAsync(memory);
+            if (bytesRead == 0) break;
 
-        return errors;
+            ProcessBuffer(memory.Slice(0, bytesRead));
+        }
+    }
+
+    private void ProcessBuffer(ReadOnlySpan<byte> buffer)
+    {
+        // Process buffer without allocations
+        for (int i = 0; i < buffer.Length; i++)
+        {
+            // Process each byte
+        }
     }
 }
 ```
 
 ### Best Practices
-1. **Reflection Usage**
-   - Cache reflection results
-   - Handle exceptions
-   - Consider performance
-   - Use proper security
+1. **Memory Management**
+   - Use proper GC settings
+   - Handle large objects
+   - Monitor memory usage
+   - Clean up resources
 
-2. **Attribute Design**
-   - Use proper targets
-   - Document attributes
-   - Handle inheritance
+2. **Span<T> Usage**
+   - Use for stack-only operations
+   - Avoid heap allocations
+   - Handle buffer boundaries
    - Consider performance
 
-3. **Performance**
-   - Cache reflection results
-   - Use proper caching
-   - Handle memory usage
+3. **Memory<T> Usage**
+   - Use for heap operations
+   - Handle memory lifetime
+   - Consider thread safety
    - Monitor performance
 
-4. **Security**
-   - Validate inputs
-   - Handle exceptions
-   - Use proper security
-   - Monitor access
+4. **Buffer Handling**
+   - Use proper buffer size
+   - Handle buffer overflow
+   - Consider performance
+   - Monitor memory usage
 
 ### Anti-patterns
-1. **Reflection Issues**
-   - Poor performance
-   - Not caching
-   - Security issues
+1. **Memory Issues**
    - Memory leaks
+   - Large object heap
+   - Poor GC settings
+   - Resource leaks
 
-2. **Attribute Problems**
-   - Wrong targets
-   - Poor documentation
-   - Not handling inheritance
+2. **Span Problems**
+   - Stack overflow
+   - Buffer overflow
+   - Thread safety issues
+   - Performance problems
+
+3. **Memory Problems**
+   - Memory leaks
+   - Thread safety issues
+   - Lifetime issues
+   - Performance problems
+
+4. **Buffer Issues**
+   - Buffer overflow
+   - Memory leaks
+   - Performance issues
+   - Resource leaks
+
+### Follow-up Questions
+
+1. **Q: When should you use Span<T> vs Memory<T>?**
+   - **Answer**: Use Span<T> for stack-only operations and Memory<T> for heap operations.
+   - **Example**:
+     ```csharp
+     // Span<T> - stack-only
+     public void ProcessBuffer(ReadOnlySpan<byte> buffer)
+     {
+         // Process buffer without allocations
+     }
+
+     // Memory<T> - heap
+     public async Task ProcessBufferAsync(Memory<byte> buffer)
+     {
+         await ProcessBufferAsync(buffer);
+     }
+     ```
+   - **Best Practice**: Use Span<T> for stack-only operations and Memory<T> for heap operations.
+
+2. **Q: How do you handle large buffers efficiently?**
+   - **Answer**: Use proper buffer size and handle memory efficiently.
+   - **Example**:
+     ```csharp
+     public class BufferProcessor
+     {
+         private const int BufferSize = 8192;
+
+         public async Task ProcessLargeFileAsync(string filePath)
+         {
+             using var file = File.OpenRead(filePath);
+             var buffer = new byte[BufferSize];
+             var memory = new Memory<byte>(buffer);
+
+             while (true)
+             {
+                 var bytesRead = await file.ReadAsync(memory);
+                 if (bytesRead == 0) break;
+
+                 ProcessBuffer(memory.Slice(0, bytesRead));
+             }
+         }
+     }
+     ```
+   - **Best Practice**: Use proper buffer size and handle memory efficiently.
+
+## 3. Pattern Matching
+
+### Core Concepts
+- switch expression
+- property pattern
+- tuple pattern
+- type pattern
+- constant pattern
+
+### Real-world Example
+Order processing with pattern matching:
+```csharp
+public class OrderProcessor
+{
+    public string GetOrderStatus(Order order) => order switch
+    {
+        { Status: OrderStatus.Pending } => "Order is pending",
+        { Status: OrderStatus.Processing, PaymentStatus: PaymentStatus.Paid } => "Order is being processed",
+        { Status: OrderStatus.Shipped, TrackingNumber: not null } => $"Order is shipped: {order.TrackingNumber}",
+        { Status: OrderStatus.Delivered } => "Order is delivered",
+        _ => "Unknown order status"
+    };
+
+    public decimal CalculateDiscount(Order order) => (order.CustomerType, order.TotalAmount) switch
+    {
+        (CustomerType.Premium, var amount) when amount > 1000 => amount * 0.1m,
+        (CustomerType.Regular, var amount) when amount > 500 => amount * 0.05m,
+        _ => 0m
+    };
+}
+```
+
+### Best Practices
+1. **Pattern Design**
+   - Use appropriate patterns
+   - Handle all cases
+   - Consider readability
+   - Document patterns
+
+2. **Switch Expression**
+   - Use proper syntax
+   - Handle all cases
+   - Consider performance
+   - Document cases
+
+3. **Property Pattern**
+   - Use proper syntax
+   - Handle null cases
+   - Consider inheritance
+   - Document properties
+
+4. **Tuple Pattern**
+   - Use proper syntax
+   - Handle all cases
+   - Consider readability
+   - Document tuples
+
+### Anti-patterns
+1. **Pattern Issues**
+   - Not handling all cases
+   - Poor readability
+   - Not documented
    - Performance issues
 
-3. **Performance**
-   - Not caching
-   - Poor performance
-   - Memory issues
-   - Resource leaks
+2. **Switch Problems**
+   - Not handling all cases
+   - Poor syntax
+   - Not documented
+   - Performance issues
 
-4. **Security**
-   - Not validating
-   - Security issues
-   - Not monitoring
-   - Poor access control
+3. **Property Problems**
+   - Not handling nulls
+   - Poor syntax
+   - Not documented
+   - Inheritance issues
+
+4. **Tuple Problems**
+   - Not handling all cases
+   - Poor syntax
+   - Not documented
+   - Readability issues
 
 ### Follow-up Questions
 
-1. **Q: When should you use reflection?**
-   - **Answer**: Use reflection when you need to inspect or interact with types at runtime, such as for validation, serialization, or dependency injection.
+1. **Q: What's the difference between switch statement and switch expression?**
+   - **Answer**: Switch expression is more concise and can return a value.
    - **Example**:
      ```csharp
-     public class SerializationService
+     // Switch statement
+     public string GetStatus(Order order)
      {
-         public string Serialize(object obj)
+         switch (order.Status)
          {
-             var properties = obj.GetType()
-                 .GetProperties()
-                 .Where(p => p.CanRead);
-
-             var values = properties
-                 .Select(p => $"{p.Name}: {p.GetValue(obj)}");
-
-             return string.Join(", ", values);
-         }
-     }
-     ```
-   - **Best Practice**: Cache reflection results and handle exceptions properly.
-
-2. **Q: How do you create custom attributes?**
-   - **Answer**: Create a class that inherits from Attribute and use AttributeUsage to specify valid targets.
-   - **Example**:
-     ```csharp
-     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-     public class MaxLengthAttribute : Attribute
-     {
-         public int Length { get; }
-
-         public MaxLengthAttribute(int length)
-         {
-             Length = length;
+             case OrderStatus.Pending:
+                 return "Pending";
+             case OrderStatus.Processing:
+                 return "Processing";
+             default:
+                 return "Unknown";
          }
      }
 
-     // Usage
-     public class Product
+     // Switch expression
+     public string GetStatus(Order order) => order.Status switch
      {
-         [MaxLength(100)]
-         public string Name { get; set; }
-     }
+         OrderStatus.Pending => "Pending",
+         OrderStatus.Processing => "Processing",
+         _ => "Unknown"
+     };
      ```
-   - **Best Practice**: Use proper targets and document attributes.
+   - **Best Practice**: Use switch expression for more concise code.
 
-## 5. Generics and Constraints
+2. **Q: How do you handle complex pattern matching?**
+   - **Answer**: Use nested patterns and proper syntax.
+   - **Example**:
+     ```csharp
+     public string GetOrderInfo(Order order) => order switch
+     {
+         { Status: OrderStatus.Pending, PaymentStatus: PaymentStatus.Unpaid } => "Awaiting payment",
+         { Status: OrderStatus.Processing, PaymentStatus: PaymentStatus.Paid } => "Processing payment",
+         { Status: OrderStatus.Shipped, TrackingNumber: not null } => $"Shipped: {order.TrackingNumber}",
+         _ => "Unknown status"
+     };
+     ```
+   - **Best Practice**: Use nested patterns for complex matching.
 
-### Core Concept
-Generics allow you to write type-safe code that can work with different types, while constraints specify what types can be used with generics.
+## 4. Expression Trees & Source Generators
+
+### Core Concepts
+- Expression<Func<T,bool>>
+- Custom LINQ providers
+- Source generators
+- Code generation
 
 ### Real-world Example
-In an ecommerce system:
-- Repository pattern
-- Service layer
-- Data access
-- Caching
-
-### Code Example
+Custom LINQ provider for database queries:
 ```csharp
-public interface IRepository<T> where T : class
+public class CustomQueryProvider : IQueryProvider
 {
-    Task<T> GetByIdAsync(int id);
-    Task<IEnumerable<T>> GetAllAsync();
-    Task AddAsync(T entity);
-    Task UpdateAsync(T entity);
-    Task DeleteAsync(T entity);
-}
-
-public class Repository<T> : IRepository<T> where T : class
-{
-    private readonly DbContext _context;
-    private readonly DbSet<T> _dbSet;
-    private readonly ILogger<Repository<T>> _logger;
-
-    public Repository(DbContext context, ILogger<Repository<T>> logger)
+    public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
     {
-        _context = context;
-        _dbSet = context.Set<T>();
-        _logger = logger;
+        return new CustomQuery<TElement>(this, expression);
     }
 
-    public async Task<T> GetByIdAsync(int id)
+    public object Execute(Expression expression)
     {
-        return await _dbSet.FindAsync(id);
+        // Convert expression to SQL
+        var sql = TranslateExpression(expression);
+        return ExecuteQuery(sql);
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync()
+    private string TranslateExpression(Expression expression)
     {
-        return await _dbSet.ToListAsync();
-    }
-
-    public async Task AddAsync(T entity)
-    {
-        await _dbSet.AddAsync(entity);
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task UpdateAsync(T entity)
-    {
-        _dbSet.Update(entity);
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(T entity)
-    {
-        _dbSet.Remove(entity);
-        await _context.SaveChangesAsync();
-    }
-}
-
-// Usage
-public class ProductService
-{
-    private readonly IRepository<Product> _productRepository;
-    private readonly ILogger<ProductService> _logger;
-
-    public ProductService(
-        IRepository<Product> productRepository,
-        ILogger<ProductService> logger)
-    {
-        _productRepository = productRepository;
-        _logger = logger;
-    }
-
-    public async Task<Product> GetProductAsync(int id)
-    {
-        return await _productRepository.GetByIdAsync(id);
-    }
-
-    public async Task<IEnumerable<Product>> GetAllProductsAsync()
-    {
-        return await _productRepository.GetAllAsync();
+        // Translate expression to SQL
+        return expression switch
+        {
+            MethodCallExpression m => TranslateMethodCall(m),
+            BinaryExpression b => TranslateBinary(b),
+            MemberExpression m => TranslateMember(m),
+            _ => throw new NotSupportedException()
+        };
     }
 }
 ```
 
 ### Best Practices
-1. **Generic Design**
-   - Use proper constraints
-   - Document generics
-   - Handle type safety
+1. **Expression Design**
+   - Use proper syntax
+   - Handle all cases
    - Consider performance
+   - Document expressions
 
-2. **Constraint Usage**
-   - Use appropriate constraints
-   - Document constraints
-   - Handle type safety
-   - Consider flexibility
+2. **LINQ Provider**
+   - Use proper translation
+   - Handle all operators
+   - Consider performance
+   - Document operators
 
-3. **Type Safety**
-   - Use proper constraints
-   - Handle type checking
-   - Consider inheritance
-   - Monitor type safety
+3. **Source Generator**
+   - Use proper syntax
+   - Handle all cases
+   - Consider performance
+   - Document generation
 
-4. **Performance**
-   - Use proper caching
-   - Handle memory usage
-   - Consider boxing
-   - Monitor performance
+4. **Code Generation**
+   - Use proper syntax
+   - Handle all cases
+   - Consider performance
+   - Document generation
 
 ### Anti-patterns
-1. **Generic Issues**
-   - Wrong constraints
-   - Poor documentation
-   - Type safety issues
-   - Performance problems
-
-2. **Constraint Problems**
-   - Too restrictive
+1. **Expression Issues**
+   - Not handling all cases
+   - Poor syntax
    - Not documented
-   - Type safety issues
-   - Flexibility issues
+   - Performance issues
 
-3. **Type Safety**
-   - Not handling types
-   - Poor type checking
-   - Inheritance issues
-   - Type safety problems
+2. **Provider Problems**
+   - Not handling all operators
+   - Poor translation
+   - Not documented
+   - Performance issues
 
-4. **Performance**
-   - Not caching
-   - Memory issues
-   - Boxing issues
-   - Performance problems
+3. **Generator Problems**
+   - Not handling all cases
+   - Poor syntax
+   - Not documented
+   - Performance issues
+
+4. **Generation Problems**
+   - Not handling all cases
+   - Poor syntax
+   - Not documented
+   - Performance issues
 
 ### Follow-up Questions
 
-1. **Q: What are the different types of generic constraints?**
-   - **Answer**: C# supports several types of constraints: where T : class, where T : struct, where T : new(), where T : BaseClass, where T : Interface.
+1. **Q: How do you create a custom LINQ provider?**
+   - **Answer**: Implement IQueryProvider and translate expressions.
    - **Example**:
      ```csharp
-     public class Repository<T> where T : class, IEntity, new()
+     public class CustomQuery<T> : IQueryable<T>
      {
-         public T Create()
+         private readonly IQueryProvider _provider;
+         private readonly Expression _expression;
+
+         public CustomQuery(IQueryProvider provider, Expression expression)
          {
-             return new T();
+             _provider = provider;
+             _expression = expression;
          }
 
-         public void Save(T entity)
+         public IEnumerator<T> GetEnumerator()
          {
-             // Save entity
+             return _provider.Execute<IEnumerable<T>>(_expression).GetEnumerator();
          }
      }
      ```
-   - **Best Practice**: Use appropriate constraints to ensure type safety.
+   - **Best Practice**: Implement IQueryProvider and translate expressions.
 
-2. **Q: How do you handle generic type constraints?**
-   - **Answer**: Use appropriate constraints and handle type safety properly.
+2. **Q: How do you use source generators?**
+   - **Answer**: Create a generator class and implement ISourceGenerator.
    - **Example**:
      ```csharp
-     public class Cache<T> where T : class
+     [Generator]
+     public class CustomGenerator : ISourceGenerator
      {
-         private readonly Dictionary<string, T> _cache = new();
-
-         public void Add(string key, T value)
+         public void Initialize(GeneratorInitializationContext context)
          {
-             if (value == null)
-                 throw new ArgumentNullException(nameof(value));
-
-             _cache[key] = value;
+             // Initialize generator
          }
 
-         public T Get(string key)
+         public void Execute(GeneratorExecutionContext context)
          {
-             return _cache.TryGetValue(key, out var value) ? value : null;
+             // Generate code
+             var sourceBuilder = new StringBuilder();
+             sourceBuilder.AppendLine("// Generated code");
+             context.AddSource("Generated.cs", sourceBuilder.ToString());
          }
      }
      ```
-   - **Best Practice**: Use proper constraints and handle null cases.
+   - **Best Practice**: Create a generator class and implement ISourceGenerator.
+
+## 5. Threading & Synchronization
+
+### Core Concepts
+- lock statement
+- SemaphoreSlim
+- Interlocked
+- PLINQ
+- Parallel.ForEach
+
+### Real-world Example
+Parallel order processing:
+```csharp
+public class OrderProcessor
+{
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(10);
+    private readonly object _lock = new object();
+
+    public async Task ProcessOrdersAsync(IEnumerable<Order> orders)
+    {
+        var tasks = orders.Select(async order =>
+        {
+            await _semaphore.WaitAsync();
+            try
+            {
+                await ProcessOrderAsync(order);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks);
+    }
+
+    public void UpdateInventory(IEnumerable<Product> products)
+    {
+        Parallel.ForEach(products, product =>
+        {
+            lock (_lock)
+            {
+                // Update inventory
+            }
+        });
+    }
+}
+```
+
+### Best Practices
+1. **Thread Safety**
+   - Use proper locking
+   - Handle deadlocks
+   - Consider performance
+   - Monitor threads
+
+2. **Synchronization**
+   - Use proper primitives
+   - Handle contention
+   - Consider performance
+   - Monitor resources
+
+3. **Parallel Processing**
+   - Use proper patterns
+   - Handle exceptions
+   - Consider performance
+   - Monitor resources
+
+4. **Resource Management**
+   - Use proper cleanup
+   - Handle resources
+   - Consider performance
+   - Monitor usage
+
+### Anti-patterns
+1. **Thread Issues**
+   - Deadlocks
+   - Race conditions
+   - Not thread-safe
+   - Resource leaks
+
+2. **Sync Problems**
+   - Poor locking
+   - Contention issues
+   - Not thread-safe
+   - Resource leaks
+
+3. **Parallel Problems**
+   - Not handling exceptions
+   - Poor patterns
+   - Not thread-safe
+   - Resource leaks
+
+4. **Resource Problems**
+   - Not cleaning up
+   - Resource leaks
+   - Not thread-safe
+   - Performance issues
+
+### Follow-up Questions
+
+1. **Q: How do you prevent deadlocks in multi-threaded code?**
+   - **Answer**: Use proper locking order and timeouts.
+   - **Example**:
+     ```csharp
+     public class ResourceManager
+     {
+         private readonly object _lock1 = new object();
+         private readonly object _lock2 = new object();
+
+         public void ProcessResources()
+         {
+             // Always lock in the same order
+             lock (_lock1)
+             {
+                 lock (_lock2)
+                 {
+                     // Process resources
+                 }
+             }
+         }
+     }
+     ```
+   - **Best Practice**: Use proper locking order and timeouts.
+
+2. **Q: How do you handle parallel processing?**
+   - **Answer**: Use proper patterns and handle exceptions.
+   - **Example**:
+     ```csharp
+     public class OrderProcessor
+     {
+         public void ProcessOrders(IEnumerable<Order> orders)
+         {
+             Parallel.ForEach(orders, new ParallelOptions
+             {
+                 MaxDegreeOfParallelism = Environment.ProcessorCount
+             }, order =>
+             {
+                 try
+                 {
+                     ProcessOrder(order);
+                 }
+                 catch (Exception ex)
+                 {
+                     _logger.LogError(ex, "Error processing order");
+                 }
+             });
+         }
+     }
+     ```
+   - **Best Practice**: Use proper patterns and handle exceptions.
+
+## 6. Unsafe Code & Pointers
+
+### Core Concepts
+- unsafe block
+- fixed statement
+- pointer arithmetic
+- native interop
+
+### Real-world Example
+Native buffer processing:
+```csharp
+public class BufferProcessor
+{
+    public unsafe void ProcessBuffer(byte[] buffer)
+    {
+        fixed (byte* ptr = buffer)
+        {
+            // Process buffer using pointers
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                *(ptr + i) = (byte)(*(ptr + i) ^ 0xFF);
+            }
+        }
+    }
+}
+```
+
+### Best Practices
+1. **Unsafe Code**
+   - Use sparingly
+   - Handle memory
+   - Consider safety
+   - Document usage
+
+2. **Pointer Usage**
+   - Use properly
+   - Handle bounds
+   - Consider safety
+   - Document usage
+
+3. **Native Interop**
+   - Use properly
+   - Handle memory
+   - Consider safety
+   - Document usage
+
+4. **Memory Management**
+   - Use properly
+   - Handle cleanup
+   - Consider safety
+   - Document usage
+
+### Anti-patterns
+1. **Unsafe Issues**
+   - Overuse
+   - Memory leaks
+   - Safety issues
+   - Not documented
+
+2. **Pointer Problems**
+   - Buffer overflow
+   - Memory leaks
+   - Safety issues
+   - Not documented
+
+3. **Interop Problems**
+   - Memory leaks
+   - Safety issues
+   - Not documented
+   - Resource leaks
+
+4. **Memory Problems**
+   - Memory leaks
+   - Safety issues
+   - Not documented
+   - Resource leaks
+
+### Follow-up Questions
+
+1. **Q: When should you use unsafe code?**
+   - **Answer**: Use unsafe code only when necessary for performance or interop.
+   - **Example**:
+     ```csharp
+     public unsafe class ImageProcessor
+     {
+         public void ProcessImage(byte[] imageData)
+         {
+             fixed (byte* ptr = imageData)
+             {
+                 // Process image data
+             }
+         }
+     }
+     ```
+   - **Best Practice**: Use unsafe code only when necessary.
+
+2. **Q: How do you handle pointer arithmetic safely?**
+   - **Answer**: Use proper bounds checking and fixed statements.
+   - **Example**:
+     ```csharp
+     public unsafe class BufferProcessor
+     {
+         public void ProcessBuffer(byte[] buffer)
+         {
+             fixed (byte* ptr = buffer)
+             {
+                 for (int i = 0; i < buffer.Length; i++)
+                 {
+                     // Safe pointer arithmetic
+                     byte* current = ptr + i;
+                     *current = (byte)(*current ^ 0xFF);
+                 }
+             }
+         }
+     }
+     ```
+   - **Best Practice**: Use proper bounds checking and fixed statements.
+
+## 7. Advanced Reflection & Custom Attributes
+
+### Core Concepts
+- Custom attributes
+- Activator.CreateInstance
+- Type information
+- Member reflection
+
+### Real-world Example
+Custom attribute usage:
+```csharp
+[AttributeUsage(AttributeTargets.Class)]
+public class TableAttribute : Attribute
+{
+    public string Name { get; }
+
+    public TableAttribute(string name)
+    {
+        Name = name;
+    }
+}
+
+[Table("Products")]
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+}
+
+public class EntityMapper
+{
+    public string GetTableName(Type type)
+    {
+        var attribute = type.GetCustomAttribute<TableAttribute>();
+        return attribute?.Name ?? type.Name;
+    }
+
+    public T CreateInstance<T>() where T : class
+    {
+        return Activator.CreateInstance<T>();
+    }
+}
+```
+
+### Best Practices
+1. **Attribute Design**
+   - Use properly
+   - Handle inheritance
+   - Consider performance
+   - Document usage
+
+2. **Reflection Usage**
+   - Use sparingly
+   - Handle exceptions
+   - Consider performance
+   - Document usage
+
+3. **Type Information**
+   - Use properly
+   - Handle inheritance
+   - Consider performance
+   - Document usage
+
+4. **Member Reflection**
+   - Use properly
+   - Handle exceptions
+   - Consider performance
+   - Document usage
+
+### Anti-patterns
+1. **Attribute Issues**
+   - Overuse
+   - Poor design
+   - Not documented
+   - Performance issues
+
+2. **Reflection Problems**
+   - Overuse
+   - Not handling exceptions
+   - Not documented
+   - Performance issues
+
+3. **Type Problems**
+   - Not handling inheritance
+   - Not documented
+   - Performance issues
+   - Safety issues
+
+4. **Member Problems**
+   - Not handling exceptions
+   - Not documented
+   - Performance issues
+   - Safety issues
+
+### Follow-up Questions
+
+1. **Q: How do you create and use custom attributes?**
+   - **Answer**: Create an attribute class and use reflection to read it.
+   - **Example**:
+     ```csharp
+     [AttributeUsage(AttributeTargets.Property)]
+     public class RequiredAttribute : Attribute
+     {
+     }
+
+     public class Validator
+     {
+         public bool Validate(object obj)
+         {
+             var type = obj.GetType();
+             foreach (var property in type.GetProperties())
+             {
+                 if (property.GetCustomAttribute<RequiredAttribute>() != null)
+                 {
+                     var value = property.GetValue(obj);
+                     if (value == null)
+                         return false;
+                 }
+             }
+             return true;
+         }
+     }
+     ```
+   - **Best Practice**: Create an attribute class and use reflection to read it.
+
+2. **Q: How do you use Activator.CreateInstance?**
+   - **Answer**: Use it to create instances of types dynamically.
+   - **Example**:
+     ```csharp
+     public class Factory
+     {
+         public T Create<T>(string typeName) where T : class
+         {
+             var type = Type.GetType(typeName);
+             if (type == null)
+                 throw new ArgumentException($"Type {typeName} not found");
+
+             return (T)Activator.CreateInstance(type);
+         }
+     }
+     ```
+   - **Best Practice**: Use it to create instances of types dynamically.
+
+## 8. Preprocessor Directives
+
+### Core Concepts
+- #if DEBUG
+- #region
+- #warning
+- #error
+- Conditional compilation
+
+### Real-world Example
+Multi-environment build:
+```csharp
+public class Configuration
+{
+    public string GetConnectionString()
+    {
+        #if DEBUG
+            return "DebugConnectionString";
+        #elif RELEASE
+            return "ReleaseConnectionString";
+        #else
+            return "DefaultConnectionString";
+        #endif
+    }
+
+    #region Logging
+    public void Log(string message)
+    {
+        #if DEBUG
+            Console.WriteLine($"Debug: {message}");
+        #endif
+    }
+    #endregion
+}
+```
+
+### Best Practices
+1. **Directive Usage**
+   - Use properly
+   - Handle all cases
+   - Consider readability
+   - Document usage
+
+2. **Conditional Compilation**
+   - Use properly
+   - Handle all cases
+   - Consider readability
+   - Document usage
+
+3. **Region Usage**
+   - Use properly
+   - Handle organization
+   - Consider readability
+   - Document usage
+
+4. **Warning Usage**
+   - Use properly
+   - Handle all cases
+   - Consider readability
+   - Document usage
+
+### Anti-patterns
+1. **Directive Issues**
+   - Overuse
+   - Not handling all cases
+   - Not documented
+   - Readability issues
+
+2. **Conditional Problems**
+   - Not handling all cases
+   - Not documented
+   - Readability issues
+   - Maintenance issues
+
+3. **Region Problems**
+   - Overuse
+   - Not documented
+   - Readability issues
+   - Organization issues
+
+4. **Warning Problems**
+   - Overuse
+   - Not documented
+   - Readability issues
+   - Maintenance issues
+
+### Follow-up Questions
+
+1. **Q: When should you use preprocessor directives?**
+   - **Answer**: Use them for conditional compilation and code organization.
+   - **Example**:
+     ```csharp
+     public class Logger
+     {
+         public void Log(string message)
+         {
+             #if DEBUG
+                 Console.WriteLine($"Debug: {message}");
+             #elif TRACE
+                 Console.WriteLine($"Trace: {message}");
+             #endif
+         }
+     }
+     ```
+   - **Best Practice**: Use them for conditional compilation and code organization.
+
+2. **Q: How do you handle multiple build configurations?**
+   - **Answer**: Use preprocessor directives and build configurations.
+   - **Example**:
+     ```csharp
+     public class Configuration
+     {
+         public string GetConnectionString()
+         {
+             #if DEBUG
+                 return "DebugConnectionString";
+             #elif RELEASE
+                 return "ReleaseConnectionString";
+             #else
+                 return "DefaultConnectionString";
+             #endif
+         }
+     }
+     ```
+   - **Best Practice**: Use preprocessor directives and build configurations.
 
 ### Key Takeaways
-1. Understand advanced C# concepts
-2. Use appropriate patterns
-3. Handle performance
-4. Follow best practices
-5. Consider security
+1. Understand async/await and TPL
+2. Use memory management effectively
+3. Implement pattern matching
+4. Use expression trees and source generators
+5. Handle threading and synchronization
+6. Use unsafe code carefully
+7. Implement reflection and attributes
+8. Use preprocessor directives properly
 
 ### Additional Resources
-- [C# Delegates](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/delegates/)
-- [C# Events](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/events/)
-- [C# LINQ](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/)
 - [C# Async/Await](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/)
+- [C# Memory Management](https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/)
+- [C# Pattern Matching](https://docs.microsoft.com/en-us/dotnet/csharp/pattern-matching)
+- [C# Expression Trees](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/expression-trees/)
+- [C# Source Generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview)
+- [C# Threading](https://docs.microsoft.com/en-us/dotnet/standard/threading/)
+- [C# Unsafe Code](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/unsafe-code)
 - [C# Reflection](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/reflection)
-- [C# Attributes](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/attributes/)
-- [C# Generics](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/)
+- [C# Preprocessor Directives](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives)
