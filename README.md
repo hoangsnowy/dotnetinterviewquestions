@@ -1,106 +1,43 @@
-# .NET Interview Questions & Best Practices
+# .NET Interview Questions
 
-A comprehensive collection of .NET interview questions, best practices, and real-world examples covering various aspects of .NET development.
+A comprehensive collection of .NET interview questions and answers, covering various aspects of C# programming, .NET framework, and best practices.
 
-## 📚 Table of Contents
+## Table of Contents
 
-### Core .NET Concepts
-- [C# Programming](csharp/)
-  - [Object-Oriented Programming](csharp/oop.en.md)
-  - [Basic Concepts](csharp/basic.en.md)
-  - [Advanced Topics](csharp/advanced.en.md)
+### C# Fundamentals
+- [Basic C# Concepts](csharp/basic.en.md)
+- [Object-Oriented Programming](csharp/oop.en.md)
+- [Advanced C# Concepts](csharp/advanced.en.md)
+- [Memory Management](csharp/memory.en.md)
 
-### Web Development
-- [ASP.NET Core](aspnetcore/)
-  - [Authentication](aspnetcore/authentication.en.md)
-  - [Dependency Injection](aspnetcore/di.en.md)
-  - [Middleware](aspnetcore/middleware.en.md)
-  - [Model Binding](aspnetcore/model_binding.en.md)
-  - [Routing](aspnetcore/routing.en.md)
+### Best Practices
+- [Coding Standards](best-practices/coding-standards.en.md)
+- [Design Patterns](best-practices/design-patterns.en.md)
+- [Performance Optimization](best-practices/performance.en.md)
+- [Security](best-practices/security.en.md)
 
-### Data Access
-- [Entity Framework Core](efcore/)
-  - [Basics](efcore/basics.en.md)
-  - [Performance](efcore/performance.en.md)
+### Architecture
+- [Clean Architecture](architecture/clean-architecture.en.md)
+- [Microservices](architecture/microservices.en.md)
+- [API Design](architecture/api-design.en.md)
+- [Database Design](architecture/database-design.en.md)
 
-### Architecture & Design
-- [Architecture Patterns](architecture/)
-  - [Clean Architecture](architecture/clean.en.md)
-  - [CQRS & Mediator](architecture/cqrs_mediator.en.md)
-  - [Onion Architecture](architecture/onion.en.md)
-- [Design Patterns](design-patterns/)
-  - [Common Patterns](design-patterns/common.en.md)
-  - [Advanced Patterns](design-patterns/advanced.en.md)
-- [System Design](system-design/)
-  - [API Gateway](system-design/api_gateway.en.md)
-  - [Monolith vs Microservices](system-design/monolith_microservices.en.md)
-  - [Scalability](system-design/scalability.en.md)
+### Testing
+- [Unit Testing](testing/unit-testing.en.md)
+- [Integration Testing](testing/integration-testing.en.md)
+- [Test-Driven Development](testing/tdd.en.md)
+- [Mocking and Stubbing](testing/mocking.en.md)
 
-### DevOps & Deployment
-- [DevOps](devops/)
-  - [Azure Deployment](devops/deploy_azure.en.md)
-  - [Docker](devops/docker.en.md)
-  - [GitHub Actions](devops/github_actions.en.md)
+### DevOps
+- [CI/CD](devops/ci-cd.en.md)
+- [Docker](devops/docker.en.md)
+- [Kubernetes](devops/kubernetes.en.md)
+- [Monitoring and Logging](devops/monitoring.en.md)
 
-### Testing & Quality
-- [Testing](testing/)
-  - [Unit Testing](testing/unit.en.md)
-  - [Integration Testing](testing/integration.en.md)
-  - [E2E Testing](testing/e2e.en.md)
-  - [Mocking](testing/mocking.en.md)
+## Contributing
+We welcome contributions! Please feel free to submit a Pull Request.
 
-### Security
-- [Security](security/)
-  - [Authentication](security/authentication.en.md)
-  - [Authorization](security/authorization.en.md)
-  - [JWT & OAuth](security/jwt_oauth.en.md)
-
-### Behavioral & Soft Skills
-- [Behavioral](behavioral/)
-  - [Conflict Resolution](behavioral/conflict.en.md)
-  - [Teamwork](behavioral/teamwork.en.md)
-  - [Time Management](behavioral/time_management.en.md)
-
-### .NET Fundamentals
-- [.NET Core](dotnet/)
-  - [General Concepts](dotnet/general.en.md)
-  - [SDK & Tools](dotnet/sdk_tools.en.md)
-
-## 🎯 Purpose
-
-This repository serves as a comprehensive resource for:
-- .NET developers preparing for technical interviews
-- Teams looking to establish coding standards
-- Developers seeking to improve their .NET knowledge
-- Anyone interested in learning .NET best practices
-
-## 🌟 Features
-
-- **Comprehensive Coverage**: From basic concepts to advanced topics
-- **Real-world Examples**: Practical code samples and scenarios
-- **Best Practices**: Industry-standard guidelines and recommendations
-- **Interview Questions**: Common interview questions with detailed answers
-- **Code Examples**: Well-documented code samples with explanations
-- **Regular Updates**: Continuously updated with new content and improvements
-
-## 📖 How to Use
-
-1. **Browse by Topic**: Navigate through the directory structure to find specific topics
-2. **Search**: Use the search functionality to find specific content
-3. **Contribute**: Feel free to contribute by submitting pull requests
-4. **Star & Share**: If you find this useful, please star and share with others
-
-## 🤝 Contributing
-
-We welcome contributions! Please feel free to:
-- Add new topics
-- Improve existing content
-- Fix errors
-- Add more examples
-- Suggest improvements
-
-## 📝 License
-
+## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments

@@ -1,4 +1,4 @@
-# Object-Oriented Programming in C# – Interview Questions (Ecommerce Domain)
+# Object-Oriented Programming in C# – Interview Questions
 
 This comprehensive guide covers essential OOP concepts in C# with ecommerce-focused examples, detailed explanations, best practices, and real-world scenarios.
 
