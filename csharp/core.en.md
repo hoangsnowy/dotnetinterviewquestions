@@ -146,6 +146,40 @@ public class OrderService
                orderby order.OrderDate descending
                select order;
     }
+
+    // Example of joining collections
+    public IEnumerable<OrderDetail> GetOrderDetails(IEnumerable<Order> orders, IEnumerable<Customer> customers)
+    {
+        var query = from order in orders
+                   join customer in customers on order.CustomerId equals customer.Id
+                   where order.TotalAmount > 100
+                   select new OrderDetail
+                   {
+                       OrderId = order.Id,
+                       CustomerName = customer.Name,
+                       OrderDate = order.OrderDate,
+                       TotalAmount = order.TotalAmount
+                   };
+
+        return query;
+    }
+
+    // Example of complex grouping
+    public IEnumerable<CustomerOrderSummary> GetCustomerOrderSummaries(
+        IEnumerable<Order> orders, 
+        IEnumerable<OrderItem> items)
+    {
+        return from order in orders
+               join item in items on order.Id equals item.OrderId
+               group new { order, item } by order.CustomerId into g
+               select new CustomerOrderSummary
+               {
+                   CustomerId = g.Key,
+                   TotalOrders = g.Select(x => x.order.Id).Distinct().Count(),
+                   TotalItems = g.Sum(x => x.item.Quantity),
+                   TotalAmount = g.Sum(x => x.item.Price * x.item.Quantity)
+               };
+    }
 }
 ```
 
@@ -168,20 +202,47 @@ Tuples provide a way to return multiple values without creating a custom type, a
 ```csharp
 using System;
 
-public class OrderCalculator
+public class OrderProcessor
 {
-    public (decimal Subtotal, decimal Tax, decimal Total) CalculateOrder(Order order)
+    public (bool IsValid, string ErrorMessage) ValidateOrder(Order order)
     {
-        var subtotal = order.Items.Sum(item => item.Price * item.Quantity);
-        var tax = subtotal * 0.1m;
-        var total = subtotal + tax;
-        return (subtotal, tax, total);
+        if (order == null)
+            return (false, "Order cannot be null");
+
+        if (order.TotalAmount <= 0)
+            return (false, "Order total must be greater than zero");
+
+        if (string.IsNullOrEmpty(order.CustomerName))
+            return (false, "Customer name is required");
+
+        return (true, string.Empty);
     }
 
     public void ProcessOrder(Order order)
     {
-        var (subtotal, tax, total) = CalculateOrder(order);
-        Console.WriteLine($"Subtotal: {subtotal:C}, Tax: {tax:C}, Total: {total:C}");
+        var (isValid, errorMessage) = ValidateOrder(order);
+        if (!isValid)
+        {
+            throw new OrderValidationException(errorMessage);
+        }
+
+        // Business logic for processing valid order
+        Console.WriteLine($"Processing order {order.Id} for {order.CustomerName}");
+    }
+
+    // Example of tuple pattern matching
+    public string GetOrderStatus(Order order)
+    {
+        var status = (order.TotalAmount > 1000, order.IsPaid, order.IsShipped);
+        return status switch
+        {
+            (true, true, true) => "Premium order shipped",
+            (true, true, false) => "Premium order ready to ship",
+            (true, false, _) => "Premium order pending payment",
+            (false, true, true) => "Standard order shipped",
+            (false, true, false) => "Standard order ready to ship",
+            (false, false, _) => "Standard order pending payment"
+        };
     }
 }
 ```

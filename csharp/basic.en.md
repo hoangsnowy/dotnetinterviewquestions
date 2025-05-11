@@ -8,6 +8,8 @@ This guide covers fundamental C# concepts with practical examples and interview 
 3. [Methods and Parameters](#3-methods-and-parameters)
 4. [Collections](#4-collections)
 5. [Exception Handling](#5-exception-handling)
+6. [Nullable Reference Types](#6-nullable-reference-types)
+7. [Pattern Matching](#7-pattern-matching)
 
 ## 1. Variables and Data Types
 
@@ -823,3 +825,80 @@ public class OrderProcessor
 - [C# Exceptions](https://docs.microsoft.com/en-us/dotnet/csharp/fundamentals/exceptions/)
 - [C# Best Practices](https://docs.microsoft.com/en-us/dotnet/standard/design-guidelines/)
 - [C# Error Handling](https://docs.microsoft.com/en-us/dotnet/standard/exceptions/)
+
+## Nullable Reference Types
+
+### Question
+How do you use nullable reference types in C#?
+
+### Suggested Answer
+Nullable reference types help catch potential null reference issues at compile time.
+
+```csharp
+#nullable enable
+
+public class Customer
+{
+    public string Name { get; set; } = string.Empty; // Non-nullable
+    public string? Email { get; set; } // Nullable
+
+    public void UpdateEmail(string? newEmail)
+    {
+        if (newEmail != null)
+        {
+            Email = newEmail;
+        }
+    }
+}
+
+#nullable disable
+```
+
+## Pattern Matching
+
+### Question
+How do you use pattern matching in C#?
+
+### Suggested Answer
+Pattern matching provides a concise way to check types and extract data.
+
+```csharp
+public class OrderProcessor
+{
+    public string GetOrderStatus(Order order)
+    {
+        return order switch
+        {
+            { Status: OrderStatus.Pending } => "Order is pending",
+            { Status: OrderStatus.Processing, PaymentStatus: PaymentStatus.Paid } => "Order is being processed",
+            { Status: OrderStatus.Shipped, TrackingNumber: not null } => $"Order is shipped: {order.TrackingNumber}",
+            { Status: OrderStatus.Delivered } => "Order is delivered",
+            _ => "Unknown order status"
+        };
+    }
+
+    public decimal CalculateDiscount(Order order)
+    {
+        return (order.CustomerType, order.TotalAmount) switch
+        {
+            (CustomerType.Premium, var amount) when amount > 1000 => amount * 0.1m,
+            (CustomerType.Regular, var amount) when amount > 500 => amount * 0.05m,
+            _ => 0m
+        };
+    }
+
+    public string GetShippingStatus(Order order)
+    {
+        var status = (order.TotalAmount > 1000, order.IsPaid, order.IsShipped);
+        return status switch
+        {
+            (true, true, true) => "Premium order shipped",
+            (true, true, false) => "Premium order ready to ship",
+            (true, false, _) => "Premium order pending payment",
+            (false, true, true) => "Standard order shipped",
+            (false, true, false) => "Standard order ready to ship",
+            (false, false, _) => "Standard order pending payment"
+        };
+    }
+}
+```
