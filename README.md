@@ -5,91 +5,75 @@ A comprehensive collection of .NET interview questions and answers, focusing on 
 ## Table of Contents
 
 ### C# Fundamentals
-- [Basic C# Concepts](csharp/basic.en.md)
+- [Basic C# Concepts](csharp/basic.en.md) | [Khái niệm C# Cơ bản](csharp/basic.vn.md)
   - Variables and Data Types
   - Control Structures
   - Methods and Parameters
   - Exception Handling
   - Collections and LINQ
-  - Tuples & Deconstruction
-  - Indexers & Extension Methods
-  - Nullable Reference Types
 
-- [Object-Oriented Programming](csharp/oop.en.md)
+- [Object-Oriented Programming](csharp/oop.en.md) | [Lập trình Hướng đối tượng](csharp/oop.vn.md)
   - Classes and Objects
   - Inheritance and Polymorphism
   - Interfaces and Abstract Classes
   - Encapsulation
   - SOLID Principles
-  - Record Types & Init-only Properties
-  - Default Interface Methods
-  - Static Abstract Members
 
-- [Advanced C# Concepts](csharp/advanced.en.md)
+- [C# Fundamentals](csharp/fundamentals.en.md) | [C# Cơ bản](csharp/fundamentals.vn.md)
+  - Generics & Constraints
+  - Delegates & Events
+  - LINQ & Lambda Expressions
+  - Tuples & Deconstruction
+  - Indexers & Extension Methods
+  - Nullable Reference Types
+
+- [Advanced C# Concepts](csharp/advanced.en.md) | [C# Nâng cao](csharp/advanced.vn.md)
   - Async/Await & Task Parallel Library
-    - async Task, deadlock, ConfigureAwait(false)
-    - Task.Run, Task.WhenAll, CancellationToken
-    - Parallel Processing Examples
   - Memory Management & Span<T> / Memory<T>
-    - Garbage Collector, generations, pinning
-    - Span<byte>, Memory<char> for efficient buffer handling
   - Pattern Matching
-    - switch expression, property pattern, tuple pattern
-    - Advanced pattern matching examples
   - Expression Trees & Source Generators
-    - Expression<Func<T,bool>>
-    - Custom LINQ providers
-    - C# Source Generators
   - Threading & Synchronization
-    - lock, SemaphoreSlim, Interlocked
-    - PLINQ, Parallel.ForEach
   - Unsafe Code & Pointers
-    - unsafe block, fixed statement
-    - Native buffer handling
   - Advanced Reflection & Custom Attributes
-    - Custom attribute creation and reading
-    - Activator.CreateInstance usage
   - Preprocessor Directives
-    - #if DEBUG, #region, #warning
-    - Multi-environment builds
 
-- [Memory Management](csharp/memory.en.md)
+- [Memory Management](csharp/memory.en.md) | [Quản lý Bộ nhớ](csharp/memory.vn.md)
   - Heap vs Stack
   - Garbage Collection
   - Value Types vs Reference Types
   - Memory Leaks
   - Performance Optimization
-  - Span<T> and Memory<T>
-  - Buffer Management
 
 ### Best Practices
-- [Coding Standards](best-practices/coding-standards.en.md)
-- [Design Patterns](best-practices/design-patterns.en.md)
-- [Performance Optimization](best-practices/performance.en.md)
-- [Security](best-practices/security.en.md)
+- [Coding Standards](csharp/coding-standards.en.md) | [Tiêu chuẩn Mã nguồn](csharp/coding-standards.vn.md)
+- [Design Patterns](csharp/design-patterns.en.md) | [Mẫu Thiết kế](csharp/design-patterns.vn.md)
+- [Performance Optimization](csharp/performance.en.md) | [Tối ưu Hiệu suất](csharp/performance.vn.md)
+- [Security](csharp/security.en.md) | [Bảo mật](csharp/security.vn.md)
 
 ### Architecture
-- [Clean Architecture](architecture/clean-architecture.en.md)
-- [Microservices](architecture/microservices.en.md)
-- [API Design](architecture/api-design.en.md)
-- [Database Design](architecture/database-design.en.md)
+- [Clean Architecture](csharp/clean-architecture.en.md) | [Kiến trúc Sạch](csharp/clean-architecture.vn.md)
+- [Microservices](csharp/microservices.en.md) | [Microservices](csharp/microservices.vn.md)
+- [API Design](csharp/api-design.en.md) | [Thiết kế API](csharp/api-design.vn.md)
+- [Database Design](csharp/database-design.en.md) | [Thiết kế Cơ sở dữ liệu](csharp/database-design.vn.md)
 
 ### Testing
-- [Unit Testing](testing/unit-testing.en.md)
-- [Integration Testing](testing/integration-testing.en.md)
-- [Test-Driven Development](testing/tdd.en.md)
-- [Mocking and Stubbing](testing/mocking.en.md)
+- [Unit Testing](csharp/unit-testing.en.md) | [Kiểm thử Đơn vị](csharp/unit-testing.vn.md)
+- [Integration Testing](csharp/integration-testing.en.md) | [Kiểm thử Tích hợp](csharp/integration-testing.vn.md)
+- [Test-Driven Development](csharp/tdd.en.md) | [Phát triển Hướng Kiểm thử](csharp/tdd.vn.md)
+- [Mocking and Stubbing](csharp/mocking.en.md) | [Mock và Stub](csharp/mocking.vn.md)
 
 ### DevOps
-- [CI/CD](devops/ci-cd.en.md)
-- [Docker](devops/docker.en.md)
-- [Kubernetes](devops/kubernetes.en.md)
-- [Monitoring and Logging](devops/monitoring.en.md)
+- [CI/CD](csharp/ci-cd.en.md) | [CI/CD](csharp/ci-cd.vn.md)
+- [Docker](csharp/docker.en.md) | [Docker](csharp/docker.vn.md)
+- [Kubernetes](csharp/kubernetes.en.md) | [Kubernetes](csharp/kubernetes.vn.md)
+- [Monitoring and Logging](csharp/monitoring.en.md) | [Giám sát và Ghi log](csharp/monitoring.vn.md)
 
 ## Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
+
+We welcome contributions! Please feel free to submit a Pull Request.
 
 ## License
+
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
