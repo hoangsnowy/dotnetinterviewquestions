@@ -65,6 +65,12 @@ A comprehensive collection of .NET interview questions and answers, focusing on 
   - Pattern Matching with Nullable Types
   - Migration Strategies
 
+- [Source Generators & Expression Trees](csharp/source_generators.en.md)
+  - Source Generators
+  - Expression Trees
+  - Code Generation Patterns
+  - Performance Considerations
+
 ### Best Practices
 - [Coding Standards](csharp/coding-standards.en.md)
 - [Design Patterns](csharp/design-patterns.en.md)
