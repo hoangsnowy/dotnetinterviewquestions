@@ -12,6 +12,12 @@ A comprehensive collection of .NET interview questions and answers, focusing on 
   - Exception Handling
   - Collections and LINQ
 
+- [C# Version History & FAQs](csharp/history.en.md)
+  - Version Timeline
+  - Language Features by Version
+  - Common Interview Questions
+  - Best Practices & Migration
+
 - [Object-Oriented Programming](csharp/oop.en.md)
   - Classes and Objects
   - Inheritance and Polymorphism
@@ -46,6 +52,18 @@ A comprehensive collection of .NET interview questions and answers, focusing on 
   - Value Types vs Reference Types
   - Memory Leaks
   - Performance Optimization
+
+- [Records & Init-only Properties](csharp/records.en.md)
+  - Records Basics
+  - Init-only Properties
+  - Records with Inheritance
+  - Records Best Practices
+
+- [Pattern Matching & Nullable Types](csharp/pattern_matching.en.md)
+  - Pattern Matching
+  - Nullable Reference Types
+  - Pattern Matching with Nullable Types
+  - Migration Strategies
 
 ### Best Practices
 - [Coding Standards](csharp/coding-standards.en.md)
