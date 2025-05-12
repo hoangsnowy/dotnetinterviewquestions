@@ -31,16 +31,11 @@ A comprehensive collection of .NET interview questions and answers, focusing on 
   - LINQ (joins, group, Expression<Func<,>>)
   - Tuples & Deconstruction
   - Extension Methods & Indexers
-  - Nullable Reference Types
   - Custom Exceptions & IDisposable
   - Async/Await Nuances
-  - Reflection & Attributes
 
 - [Advanced C# Concepts](csharp/advanced.en.md)
   - Async/Await & Task Parallel Library
-  - Memory Management & Span<T> / Memory<T>
-  - Pattern Matching
-  - Expression Trees & Source Generators
   - Threading & Synchronization
   - Unsafe Code & Pointers
   - Advanced Reflection & Custom Attributes
@@ -52,6 +47,7 @@ A comprehensive collection of .NET interview questions and answers, focusing on 
   - Value Types vs Reference Types
   - Memory Leaks
   - Performance Optimization
+  - Span<T> / Memory<T>
 
 - [Records & Init-only Properties](csharp/records.en.md)
   - Records Basics
@@ -69,6 +65,12 @@ A comprehensive collection of .NET interview questions and answers, focusing on 
   - Source Generators
   - Expression Trees
   - Code Generation Patterns
+  - Performance Considerations
+
+- [Reflection & Attributes](csharp/reflection.en.md)
+  - Reflection Basics
+  - Custom Attributes
+  - Dynamic Code Generation
   - Performance Considerations
 
 ### Best Practices
